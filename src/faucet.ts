@@ -51,7 +51,7 @@ export function createFaucetRoutes({ wallet }: FaucetRoutesConfig): Router {
 
   router.post('/:address', async (req: Request<{ address: string }>, res: Response) => {
     try {
-      createOverlayTx(wallet, transformAddress(req.params.address))
+      await createOverlayTx(wallet, transformAddress(req.params.address))
     } catch (err) {
       res.send(500)
     }
