@@ -72,7 +72,7 @@ async function createOverlayTx(wallet: Wallet, blockEmitter: BlockEmitter, addre
   const tx = await wallet.sendTransaction({
     to: address,
     value: 0,
-    data: '0x' + address.padStart(64, '0'),
+    data: '0x' + address.padStart(64, '0').toLowerCase(),
     gasPrice,
   })
   const { blockNumber, blockHash, transactionHash } = await tx.wait()
