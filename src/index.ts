@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { createApp } from './server'
-import { getAppConfig, getServerConfig, EnvironmentVariables } from './config'
-import { logger, subscribeLogServerRequests } from './logger'
+import { getAppConfig, getServerConfig, EnvironmentVariables } from './lib/config'
+import { logger, subscribeLogServerRequests } from './lib/logger'
 
 async function main() {
   // Configuration
@@ -11,7 +11,7 @@ async function main() {
   logger.debug('app config', appConfig)
   logger.debug('server config', { hostname: hostname, port })
   logger.info('starting the app')
-  const app = createApp(appConfig)
+  const app = createApp(appConfig, logger)
 
   // Start the app
   const server = app.listen(port, () => {

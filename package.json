@@ -52,12 +52,14 @@
   },
   "dependencies": {
     "@ethersproject/abstract-provider": "^5.6.0",
+    "@ethersproject/address": "^5.6.0",
     "@ethersproject/providers": "^5.6.1",
     "@ethersproject/wallet": "^5.6.0",
     "ethers": "^5.6.1",
     "express": "^4.17.3",
     "prom-client": "^14.0.1",
     "request-stats": "^3.0.0",
+    "tiny-typed-emitter": "^2.1.0",
     "web3-providers-ws": "^1.7.1",
     "winston": "^3.6.0"
   },
