@@ -1,6 +1,7 @@
 import { Web3Provider } from '@ethersproject/providers'
-import WebsocketProvider from 'web3-providers-ws'
+import Web3WsProvider from 'web3-providers-ws'
 import { TypedEmitter } from 'tiny-typed-emitter'
+import type { WebsocketProvider } from 'web3-providers-ws'
 
 type BlockEmitterEvents = {
   block: (block: { number: number; hash: string }) => void
@@ -13,7 +14,7 @@ export const createBlockEmitter = ({ rpcUrl }: { rpcUrl: string }): BlockEmitter
 
   // NOTE: Seems like `web3-providers-ws`'s types are incorrect?
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const wsProvider = new (WebsocketProvider as any)(rpcUrl, {
+  const wsProvider = new (Web3WsProvider as any)(rpcUrl, {
     timeout: 30000,
     clientConfig: {
       keepalive: true,
@@ -23,7 +24,7 @@ export const createBlockEmitter = ({ rpcUrl }: { rpcUrl: string }): BlockEmitter
       auto: true,
       delay: 5000,
     },
-  })
+  }) as WebsocketProvider
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const provider = new (Web3Provider as any)(wsProvider) as Web3Provider
