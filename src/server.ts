@@ -22,11 +22,21 @@ export const createApp = ({ rpcUrl, wsRpcUrl, privateKey }: AppConfig, logger: L
   app.use('/faucet', createFaucetRoutes({ wallet, blockEmitter, logger }))
 
   // Health, metrics, assets, default endpoints
-  app.get('/health', (_req, res) => res.send('OK'))
+  app.get('/health', async (_req, res) => {
+    try {
+      await provider.getBlockNumber()
+      res.sendStatus(200)
+    } catch (err) {
+      logger.error('health', err)
+      res.sendStatus(500)
+    }
+  })
+
   app.get('/metrics', async (_req, res) => {
     res.write(await register.metrics())
     res.end()
   })
+
   app.use(express.static('public'))
   app.use((_req, res) => res.sendStatus(404))
 
