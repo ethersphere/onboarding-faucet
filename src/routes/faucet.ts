@@ -138,6 +138,12 @@ export function createFaucetRoutes({ wallet, blockEmitter, logger, bzz, funding 
   })
 
   router.post('/fund/bzz/:address', async (req: Request<{ address: string }>, res: Response) => {
+    if (!funding.bzzAmount) {
+      res.status(503).json({ error: 'amount not configured' })
+
+      return
+    }
+
     let address
     try {
       address = getAddress(req.params.address)
@@ -156,6 +162,12 @@ export function createFaucetRoutes({ wallet, blockEmitter, logger, bzz, funding 
   })
 
   router.post('/fund/native/:address', async (req: Request<{ address: string }>, res: Response) => {
+    if (!funding.nativeAmount) {
+      res.status(503).json({ error: 'amount not configured' })
+
+      return
+    }
+
     let address
     try {
       address = getAddress(req.params.address)
