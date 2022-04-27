@@ -1,25 +1,45 @@
 import express, { Application } from 'express'
-import type { AppConfig } from './lib/config'
 import type { Logger } from 'winston'
-import { register } from './lib/metrics'
-import { createFaucetRoutes } from './routes/faucet'
 import { Wallet } from '@ethersproject/wallet'
 import { JsonRpcProvider } from '@ethersproject/providers'
-import { createBlockEmitter } from './lib/block-emitter'
+import { Contract } from 'ethers'
 
-export const createApp = ({ rpcUrl, wsRpcUrl, privateKey }: AppConfig, logger: Logger): Application => {
+// Lib
+import { createBlockEmitter } from './lib/block-emitter'
+import { register } from './lib/metrics'
+
+// Routes
+import { createFaucetRoutes } from './routes/faucet'
+
+// Types
+import { AppConfig, EnvironmentVariables, getFundingConfig } from './lib/config'
+
+// ABI
+import abi from './data/abi.json'
+
+export const createApp = ({ rpcUrl, wsRpcUrl, privateKey, bzzAddress }: AppConfig, logger: Logger): Application => {
   // Create Express Server
   const app = express()
 
   // Setup ethers wallet
   const provider = new JsonRpcProvider(rpcUrl)
   const wallet = new Wallet(privateKey, provider)
+  const bzz = new Contract(bzzAddress, abi, wallet)
 
   // Block emitter
   const blockEmitter = createBlockEmitter({ rpcUrl: wsRpcUrl })
 
   // Faucet route
-  app.use('/faucet', createFaucetRoutes({ wallet, blockEmitter, logger }))
+  app.use(
+    '/faucet',
+    createFaucetRoutes({
+      wallet,
+      blockEmitter,
+      logger,
+      bzz,
+      funding: getFundingConfig(process.env as EnvironmentVariables),
+    }),
+  )
 
   // Health, metrics, assets, default endpoints
   app.get('/health', async (_req, res) => {
