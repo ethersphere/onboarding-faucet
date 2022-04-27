@@ -12,7 +12,6 @@
     "dist"
   ],
   "scripts": {
-    "prepare": "npm run build",
     "build": "rimraf ./build && tsc",
     "start": "nodemon --config nodemon.json src/index.ts",
     "start:debug": "nodemon --config nodemon.json --inspect-brk src/index.ts",
