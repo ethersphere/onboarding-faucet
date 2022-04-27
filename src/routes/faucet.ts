@@ -1,6 +1,9 @@
 import { Request, Response, Router } from 'express'
-import { getBuggyHash } from '../lib/buggy-hash'
 import { getAddress } from '@ethersproject/address'
+
+// Lib
+import { getBuggyHash } from '../lib/buggy-hash'
+import { auth } from '../middlewares/auth'
 
 // Types
 import type { Wallet } from '@ethersproject/wallet'
@@ -9,7 +12,6 @@ import type { BlockEmitter } from '../lib/block-emitter'
 import type { Logger } from 'winston'
 import type { Contract } from 'ethers'
 import type { FundingConfig } from '../lib/config'
-
 export type FaucetRoutesConfig = {
   wallet: Wallet
   blockEmitter: BlockEmitter
@@ -137,7 +139,7 @@ export function createFaucetRoutes({ wallet, blockEmitter, logger, bzz, funding 
     }
   })
 
-  router.post('/fund/bzz/:address', async (req: Request<{ address: string }>, res: Response) => {
+  router.post('/fund/bzz/:address', auth, async (req: Request<{ address: string }>, res: Response) => {
     if (!funding.bzzAmount) {
       res.status(503).json({ error: 'amount not configured' })
 
@@ -161,7 +163,7 @@ export function createFaucetRoutes({ wallet, blockEmitter, logger, bzz, funding 
     }
   })
 
-  router.post('/fund/native/:address', async (req: Request<{ address: string }>, res: Response) => {
+  router.post('/fund/native/:address', auth, async (req: Request<{ address: string }>, res: Response) => {
     if (!funding.nativeAmount) {
       res.status(503).json({ error: 'amount not configured' })
 

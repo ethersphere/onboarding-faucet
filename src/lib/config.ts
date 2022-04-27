@@ -15,6 +15,10 @@ export interface FundingConfig {
   nativeAmount: bigint
 }
 
+export interface AuthConfig {
+  token?: string
+}
+
 export type EnvironmentVariables = Partial<{
   // Logging
   LOG_LEVEL: string
@@ -34,6 +38,9 @@ export type EnvironmentVariables = Partial<{
   // Funding
   FUND_BZZ_AMOUNT: string
   FUND_NATIVE_AMOUNT: string
+
+  // Auth
+  AUTH_TOKEN: string
 }>
 
 export const SUPPORTED_LEVELS = ['critical', 'error', 'warn', 'info', 'verbose', 'debug'] as const
@@ -73,5 +80,11 @@ export function getFundingConfig({ FUND_BZZ_AMOUNT, FUND_NATIVE_AMOUNT }: Enviro
   return {
     bzzAmount: BigInt(FUND_BZZ_AMOUNT || '0'),
     nativeAmount: BigInt(FUND_NATIVE_AMOUNT || '0'),
+  }
+}
+
+export function getAuthConfig({ AUTH_TOKEN }: EnvironmentVariables = {}): AuthConfig {
+  return {
+    token: AUTH_TOKEN,
   }
 }
