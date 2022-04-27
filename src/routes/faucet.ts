@@ -5,6 +5,16 @@ import { getAddress } from '@ethersproject/address'
 import { getBuggyHash } from '../lib/buggy-hash'
 import { auth } from '../middlewares/auth'
 
+// Metrics
+import {
+  nativeFundCounter,
+  nativeFundFailedCounter,
+  overlayCreationCounter,
+  overlayCreationFailedCounter,
+  tokenFundCounter,
+  tokenFundFailedCounter,
+} from '../metrics/faucet'
+
 // Types
 import type { Wallet } from '@ethersproject/wallet'
 import type { Provider, TransactionReceipt } from '@ethersproject/abstract-provider'
@@ -12,6 +22,7 @@ import type { BlockEmitter } from '../lib/block-emitter'
 import type { Logger } from 'winston'
 import type { Contract } from 'ethers'
 import type { FundingConfig } from '../lib/config'
+
 export type FaucetRoutesConfig = {
   wallet: Wallet
   blockEmitter: BlockEmitter
@@ -27,6 +38,7 @@ export type OverlayTx = {
   nextBlockHashBee: string
 }
 
+// Errors
 export class HasTransactionsError extends Error {}
 export class BlockTooRecent extends Error {}
 
@@ -133,7 +145,9 @@ export function createFaucetRoutes({ wallet, blockEmitter, logger, bzz, funding 
 
     try {
       res.json(await createOverlayTx(wallet, blockEmitter, transformAddress(address)))
+      overlayCreationCounter.inc()
     } catch (err) {
+      overlayCreationFailedCounter.inc()
       logger.error('createOverlayTx', err)
       res.sendStatus(500)
     }
@@ -157,7 +171,9 @@ export function createFaucetRoutes({ wallet, blockEmitter, logger, bzz, funding 
 
     try {
       res.json(await fundAddressWithToken(bzz, transformAddress(address), funding.bzzAmount))
+      tokenFundCounter.inc()
     } catch (err) {
+      tokenFundFailedCounter.inc()
       logger.error('fundAddressWithToken', err)
       res.sendStatus(500)
     }
@@ -181,7 +197,9 @@ export function createFaucetRoutes({ wallet, blockEmitter, logger, bzz, funding 
 
     try {
       res.json(await fundAddressWithNative(wallet, transformAddress(address), funding.nativeAmount))
+      nativeFundCounter.inc()
     } catch (err) {
+      nativeFundFailedCounter.inc()
       logger.error('fundAddressWithNative', err)
       res.sendStatus(500)
     }
