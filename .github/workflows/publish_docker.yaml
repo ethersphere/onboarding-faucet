@@ -22,7 +22,7 @@ jobs:
       - name: Build image, retag and push
         if: success()
         run: |
-          docker build -t ethersphere/gateway-proxy:${TAG} .
-          docker tag ethersphere/gateway-proxy:${TAG} quay.io/ethersphere/gateway-proxy:${TAG}
-          docker push ethersphere/gateway-proxy:${TAG}
-          docker push quay.io/ethersphere/gateway-proxy:${TAG}
+          docker build -t ethersphere/onboarding-faucet:${TAG} .
+          docker tag ethersphere/onboarding-faucet:${TAG} quay.io/ethersphere/onboarding-faucet:${TAG}
+          docker push ethersphere/onboarding-faucet:${TAG}
+          docker push quay.io/ethersphere/onboarding-faucet:${TAG}
