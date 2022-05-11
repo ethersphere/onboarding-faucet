@@ -3,6 +3,9 @@ import Web3WsProvider from 'web3-providers-ws'
 import { TypedEmitter } from 'tiny-typed-emitter'
 import type { WebsocketProvider } from 'web3-providers-ws'
 
+// Lib
+import { sleep } from './utils'
+
 type BlockEmitterEvents = {
   block: (block: { number: number; hash: string }) => void
 }
@@ -64,6 +67,10 @@ export const createBlockEmitter = ({ rpcUrl }: { rpcUrl: string }): BlockEmitter
     let done
     do {
       done = await handleBlocks(number)
+
+      if (!done) {
+        await sleep(100)
+      }
     } while (!done)
   })
 
