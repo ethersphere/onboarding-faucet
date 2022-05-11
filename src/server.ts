@@ -22,7 +22,7 @@ export const createApp = ({ rpcUrl, wsRpcUrl, privateKey, bzzAddress }: AppConfi
   const app = express()
 
   // Setup ethers wallet
-  const provider = new JsonRpcProvider(rpcUrl)
+  const provider = new JsonRpcProvider({ url: rpcUrl, timeout: 1000 })
   const wallet = new Wallet(privateKey, provider)
   const bzz = new Contract(bzzAddress, abi, wallet)
 
