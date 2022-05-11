@@ -2,7 +2,7 @@ import express, { Application } from 'express'
 import type { Logger } from 'winston'
 import { Wallet } from '@ethersproject/wallet'
 import { JsonRpcProvider } from '@ethersproject/providers'
-import { Contract } from 'ethers'
+import { Contract } from '@ethersproject/contracts'
 
 // Lib
 import { createBlockEmitter } from './lib/block-emitter'

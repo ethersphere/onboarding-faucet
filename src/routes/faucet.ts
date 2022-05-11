@@ -20,7 +20,7 @@ import type { Wallet } from '@ethersproject/wallet'
 import type { Provider, TransactionReceipt } from '@ethersproject/abstract-provider'
 import type { BlockEmitter } from '../lib/block-emitter'
 import type { Logger } from 'winston'
-import type { Contract } from 'ethers'
+import type { Contract } from '@ethersproject/contracts'
 import type { FundingConfig } from '../lib/config'
 
 export type FaucetRoutesConfig = {
