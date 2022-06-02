@@ -19,7 +19,7 @@ import {
 import type { Wallet } from '@ethersproject/wallet'
 import type { Provider, TransactionReceipt } from '@ethersproject/abstract-provider'
 import type { BlockEmitter } from '../lib/block-emitter'
-import { Logger } from 'winston'
+import type { Logger } from 'winston'
 import type { Contract } from '@ethersproject/contracts'
 import type { FundingConfig } from '../lib/config'
 import { logger } from '../lib/logger'
