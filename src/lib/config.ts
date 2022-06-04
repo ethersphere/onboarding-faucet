@@ -1,6 +1,5 @@
 export interface AppConfig {
   rpcUrl: string
-  wsRpcUrl: string
   privateKey: string
   bzzAddress: string
 }
@@ -25,7 +24,6 @@ export type EnvironmentVariables = Partial<{
 
   // Ethereum
   RPC_URL: string
-  WS_RPC_URL: string
   PRIVATE_KEY: string
 
   // Server
@@ -48,7 +46,6 @@ export type SupportedLevels = typeof SUPPORTED_LEVELS[number]
 
 export const DEFAULT_LOG_LEVEL = 'info'
 export const DEFAULT_RPC_URL = 'https://rpc.gnosischain.com'
-export const DEFAULT_WS_RPC_URL = 'wss://rpc.gnosischain.com/wss'
 export const DEFAULT_HOSTNAME = 'localhost'
 export const DEFAULT_PORT = 3000
 
@@ -59,14 +56,13 @@ export const logLevel =
     ? process.env.LOG_LEVEL
     : DEFAULT_LOG_LEVEL
 
-export function getAppConfig({ RPC_URL, PRIVATE_KEY, WS_RPC_URL, BZZ_ADDRESS }: EnvironmentVariables = {}): AppConfig {
+export function getAppConfig({ RPC_URL, PRIVATE_KEY, BZZ_ADDRESS }: EnvironmentVariables = {}): AppConfig {
   if (!PRIVATE_KEY) {
     throw new Error('config: please specify the PRIVATE_KEY to use')
   }
 
   return {
     rpcUrl: RPC_URL || DEFAULT_RPC_URL,
-    wsRpcUrl: WS_RPC_URL || DEFAULT_WS_RPC_URL,
     privateKey: PRIVATE_KEY,
     bzzAddress: BZZ_ADDRESS || DEFAULT_BZZ_ADDRESS,
   }

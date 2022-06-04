@@ -59,6 +59,7 @@ export const createApp = (
 
   app.get('/readiness', async (_req, res) => {
     try {
+      await provider.getBlockNumber()
       res.sendStatus(200)
     } catch (err) {
       logger.error('readiness', err)
