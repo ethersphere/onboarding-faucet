@@ -1,6 +1,7 @@
 import { createApp } from '../src/server'
 import { logger } from '../src/lib/logger'
 import request from 'supertest'
+import { mineBlock } from './utils'
 
 const rpcUrl = process.env.RPC_URL ?? 'http://127.0.0.1:9545'
 const privateKey = process.env.TEST_PRIVATE_KEY ?? '0x4f3edf983ac636a65a842ce7c78d9aa706d3b113bce9c46f30d7d21715b23b1d'
@@ -25,6 +26,7 @@ describe('GET /health', () => {
 
 describe('GET /readiness', () => {
   it('should return 200 & OK', async () => {
+    await mineBlock()
     const res = await request(app).get(`/readiness`).expect(200)
 
     expect(res.text).toEqual('OK')
