@@ -21,11 +21,7 @@ interface AppliCationWithStop extends Application {
   stop: () => Promise<void>
 }
 
-export const createApp = (
-  { rpcUrl, privateKey, bzzAddress }: AppConfig,
-  logger: Logger,
-  timeout = 30_000,
-): AppliCationWithStop => {
+export const createApp = ({ rpcUrl, privateKey, bzzAddress }: AppConfig, logger: Logger): AppliCationWithStop => {
   // Create Express Server
   const app = express()
 
@@ -59,7 +55,11 @@ export const createApp = (
 
   app.get('/readiness', async (_req, res) => {
     try {
+      // Check we have connection to blockchain
       await provider.getBlockNumber()
+
+      // TODO: blockEmitter should have processed at least 1 block
+
       res.sendStatus(200)
     } catch (err) {
       logger.error('readiness', err)

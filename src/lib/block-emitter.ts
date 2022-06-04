@@ -10,10 +10,11 @@ type BlockEmitterEvents = {
 
 export class BlockEmitter extends TypedEmitter<BlockEmitterEvents> {
   provider: JsonRpcProvider
-  lastBlock = 0
+  lastBlock = Infinity
   handlingBlocks = false
   isRunning = false
-  interval?: any
+  // should be but it still fails to compile... ReturnType<typeof setInterval>
+  interval?: any // eslint-disable-line
 
   constructor(provider: JsonRpcProvider) {
     super()
@@ -51,8 +52,9 @@ export class BlockEmitter extends TypedEmitter<BlockEmitterEvents> {
 
   start() {
     this.isRunning = true
-    this.interval = setInterval(async (number: number) => {
+    this.interval = setInterval(async () => {
       let done
+      const number = await this.provider.getBlockNumber()
       do {
         done = await this.handleBlocks(number)
 
@@ -60,13 +62,11 @@ export class BlockEmitter extends TypedEmitter<BlockEmitterEvents> {
           await sleep(100)
         }
       } while (!done || !this.isRunning)
-    }, 100)
+    }, 5000) // TODO: this should be configurable
   }
 
   async stop() {
     clearInterval(this.interval)
     this.isRunning = false
-    this.provider.off('block')
-    await sleep(100) // there might be running some loop...
   }
 }
