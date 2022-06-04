@@ -5,7 +5,7 @@ import { JsonRpcProvider } from '@ethersproject/providers'
 import { Contract } from '@ethersproject/contracts'
 
 // Lib
-import { createBlockEmitter } from './lib/block-emitter'
+import { BlockEmitter } from './lib/block-emitter'
 import { register } from './lib/metrics'
 
 // Routes
@@ -17,17 +17,28 @@ import { AppConfig, EnvironmentVariables, getFundingConfig } from './lib/config'
 // ABI
 import abi from './data/abi.json'
 
-export const createApp = ({ rpcUrl, wsRpcUrl, privateKey, bzzAddress }: AppConfig, logger: Logger): Application => {
+interface AppliCationWithStop extends Application {
+  stop: () => Promise<void>
+}
+
+export const createApp = (
+  { rpcUrl, privateKey, bzzAddress }: AppConfig,
+  logger: Logger,
+  timeout = 30_000,
+): AppliCationWithStop => {
   // Create Express Server
   const app = express()
 
   // Setup ethers wallet
-  const provider = new JsonRpcProvider({ url: rpcUrl, timeout: 1000 })
+  const provider = new JsonRpcProvider(rpcUrl)
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const wallet = new Wallet(privateKey, provider)
   const bzz = new Contract(bzzAddress, abi, wallet)
 
   // Block emitter
-  const blockEmitter = createBlockEmitter({ rpcUrl: wsRpcUrl })
+  const blockEmitter = new BlockEmitter(provider)
+  blockEmitter.start()
 
   // Faucet route
   app.use(
@@ -43,12 +54,15 @@ export const createApp = ({ rpcUrl, wsRpcUrl, privateKey, bzzAddress }: AppConfi
 
   // Health, metrics, assets, default endpoints
   app.get('/health', async (_req, res) => {
+    res.sendStatus(200)
+  })
+
+  app.get('/readiness', async (_req, res) => {
     try {
-      await provider.getBlockNumber()
       res.sendStatus(200)
     } catch (err) {
-      logger.error('health', err)
-      res.sendStatus(500)
+      logger.error('readiness', err)
+      res.sendStatus(502)
     }
   })
 
@@ -60,5 +74,11 @@ export const createApp = ({ rpcUrl, wsRpcUrl, privateKey, bzzAddress }: AppConfi
   app.use(express.static('public'))
   app.use((_req, res) => res.sendStatus(404))
 
-  return app
+  const newApp = app as unknown as AppliCationWithStop
+
+  newApp.stop = async () => {
+    await blockEmitter.stop()
+  }
+
+  return newApp
 }

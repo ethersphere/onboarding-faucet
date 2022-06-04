@@ -13,7 +13,7 @@ export default async (): Promise<Config.InitialOptions> => {
     // collectCoverage: false,
 
     // This will setup the prerequisites for the tests to run
-    globalSetup: './tests-setup.ts',
+    // globalSetup: './tests-setup.ts',
 
     // The directory where Jest should output its coverage files
     coverageDirectory: 'coverage',

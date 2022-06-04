@@ -1,7 +1,5 @@
-import { Web3Provider } from '@ethersproject/providers'
-import Web3WsProvider from 'web3-providers-ws'
+import type { JsonRpcProvider } from '@ethersproject/providers'
 import { TypedEmitter } from 'tiny-typed-emitter'
-import type { WebsocketProvider } from 'web3-providers-ws'
 
 // Lib
 import { sleep } from './utils'
@@ -10,69 +8,65 @@ type BlockEmitterEvents = {
   block: (block: { number: number; hash: string }) => void
 }
 
-export class BlockEmitter extends TypedEmitter<BlockEmitterEvents> {}
+export class BlockEmitter extends TypedEmitter<BlockEmitterEvents> {
+  provider: JsonRpcProvider
+  lastBlock = 0
+  handlingBlocks = false
+  isRunning = false
+  interval?: any
 
-export const createBlockEmitter = ({ rpcUrl }: { rpcUrl: string }): BlockEmitter => {
-  const emitter = new BlockEmitter()
+  constructor(provider: JsonRpcProvider) {
+    super()
+    this.provider = provider
+  }
 
-  // NOTE: Seems like `web3-providers-ws`'s types are incorrect?
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const wsProvider = new (Web3WsProvider as any)(rpcUrl, {
-    timeout: 30000,
-    clientConfig: {
-      keepalive: true,
-      keepaliveInterval: 60000,
-    },
-    reconnect: {
-      auto: true,
-      delay: 5000,
-    },
-  }) as WebsocketProvider
+  async handleBlock(number: number): Promise<void> {
+    const { hash } = await this.provider.getBlock(number)
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const provider = new (Web3Provider as any)(wsProvider) as Web3Provider
-  let lastBlock = Infinity
-  let handlingBlocks = false
-
-  const handleBlock = async (number: number): Promise<void> => {
-    const { hash } = await provider.getBlock(number)
-
-    emitter.emit('block', {
+    this.emit('block', {
       number,
       hash,
     })
 
-    lastBlock = number
+    this.lastBlock = number
   }
 
-  const handleBlocks = async (number: number): Promise<boolean> => {
-    if (handlingBlocks) {
-      return number <= lastBlock
+  async handleBlocks(number: number): Promise<boolean> {
+    if (this.handlingBlocks) {
+      return number <= this.lastBlock
     }
 
-    handlingBlocks = true
+    this.handlingBlocks = true
 
     // In case blocks were missed (due to RPC issues for example), this makes sure
     // that we always emit them in the right order and without missing any
-    for (let current = lastBlock; current <= Math.max(number, lastBlock); current++) {
-      await handleBlock(number)
+    for (let current = this.lastBlock; current <= Math.max(number, this.lastBlock); current++) {
+      await this.handleBlock(number)
     }
 
-    handlingBlocks = false
+    this.handlingBlocks = false
 
     return true
   }
 
-  provider.on('block', async (number: number) => {
-    let done
-    do {
-      done = await handleBlocks(number)
+  start() {
+    this.isRunning = true
+    this.interval = setInterval(async (number: number) => {
+      let done
+      do {
+        done = await this.handleBlocks(number)
 
-      if (!done) {
-        await sleep(100)
-      }
-    } while (!done)
-  })
+        if (!done) {
+          await sleep(100)
+        }
+      } while (!done || !this.isRunning)
+    }, 100)
+  }
 
-  return emitter
+  async stop() {
+    clearInterval(this.interval)
+    this.isRunning = false
+    this.provider.off('block')
+    await sleep(100) // there might be running some loop...
+  }
 }
