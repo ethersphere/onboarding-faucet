@@ -1,5 +1,6 @@
 import type { JsonRpcProvider } from '@ethersproject/providers'
 import { TypedEmitter } from 'tiny-typed-emitter'
+import { logger } from './logger'
 
 // Lib
 import { sleep } from './utils'
@@ -51,14 +52,18 @@ export class BlockEmitter extends TypedEmitter<BlockEmitterEvents> {
 
   async check() {
     let done
-    const number = await this.provider.getBlockNumber()
-    do {
-      done = await this.handleBlocks(number)
+    try {
+      const number = await this.provider.getBlockNumber()
+      do {
+        done = await this.handleBlocks(number)
 
-      if (!done) {
-        await sleep(100)
-      }
-    } while (!done && this.interval !== null)
+        if (!done) {
+          await sleep(100)
+        }
+      } while (!done && this.interval !== null)
+    } catch (error) {
+      logger.error('failed to check blocks')
+    }
   }
 
   start() {
