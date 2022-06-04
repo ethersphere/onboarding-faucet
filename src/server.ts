@@ -58,7 +58,10 @@ export const createApp = ({ rpcUrl, privateKey, bzzAddress }: AppConfig, logger:
       // Check we have connection to blockchain
       await provider.getBlockNumber()
 
-      // TODO: blockEmitter should have processed at least 1 block
+      // Check blockEmitter has processed at least 1 block
+      if (blockEmitter.lastBlock <= 0) {
+        throw new Error('No processed blocks yet')
+      }
 
       res.sendStatus(200)
     } catch (err) {

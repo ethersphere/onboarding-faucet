@@ -10,7 +10,6 @@ const wrongRpcUrl = 'http://localhost:2021'
 const app = createApp({ rpcUrl, privateKey, bzzAddress }, logger)
 const appWrongRpcUrl = createApp({ rpcUrl: wrongRpcUrl, privateKey, bzzAddress }, logger)
 
-
 afterAll(async () => {
   app.stop()
   appWrongRpcUrl.stop()
