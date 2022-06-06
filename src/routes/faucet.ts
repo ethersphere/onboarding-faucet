@@ -215,5 +215,10 @@ export function createFaucetRoutes({ wallet, blockEmitter, logger, bzz, funding 
     }
   })
 
+  router.get('/balance', auth, async (_, res) => {
+    const balance = (await wallet.getBalance()).toString()
+    res.json({ balance })
+  })
+
   return router
 }
