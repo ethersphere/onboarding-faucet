@@ -67,7 +67,7 @@ export class BlockEmitter extends TypedEmitter<BlockEmitterEvents> {
   }
 
   start() {
-    this.interval = setInterval(this.check, 5000) // TODO: this should be configurable
+    this.interval = setInterval(this.check.bind(this), 5000) // TODO: this should be configurable
     this.check()
   }
 
