@@ -44,7 +44,6 @@ npm run start
 | ------------------ | -------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
 | LOG_LEVEL          | `info`                                       | Log level (`critical`, `error`, `warn`, `info`, `verbose`, `debug`).                                       |
 | RPC_URL            | `https://rpc.gnosischain.com`                | URL of the RPC provider.                                                                                   |
-| WS_RPC_URL         | `wss://rpc.gnosischain.com/wss`              | URL of the WebSocket RPC provider.                                                                         |
 | PRIVATE_KEY        | `undefined`                                  | Private key used to create transactions and send tokens.                                                   |
 | PORT               | `3000`                                       | Port used by the faucet's http server.                                                                     |
 | HOSTNAME           | `localhost`                                  | Hostname on which the faucet's http server listens to.                                                     |

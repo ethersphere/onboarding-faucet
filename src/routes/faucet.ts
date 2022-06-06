@@ -127,7 +127,11 @@ async function fundAddressWithToken(bzz: Contract, address: string, amount: bigi
   return await tx.wait()
 }
 
-async function fundAddressWithNative(wallet: Wallet, address: string, amount: bigint): Promise<TransactionReceipt> {
+export async function fundAddressWithNative(
+  wallet: Wallet,
+  address: string,
+  amount: bigint,
+): Promise<TransactionReceipt> {
   const gasPrice = await wallet.getGasPrice()
   const tx = await wallet.sendTransaction({
     to: address,
