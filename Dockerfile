@@ -27,7 +27,7 @@ RUN npm run build
 #
 # Final container
 #
-FROM node:lts-alpine
+FROM node
 
 WORKDIR /app
 
