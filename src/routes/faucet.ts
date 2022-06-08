@@ -102,13 +102,20 @@ async function createOverlayTx(wallet: Wallet, blockEmitter: BlockEmitter, addre
   })
   logger.info(`sending transaction to ${address}`)
   const { blockNumber, blockHash, transactionHash } = await tx.wait()
+
+  logger.debug(`createOverlayTx after waiting for tx ${tx.hash}`)
   const nextBlockNumber = blockNumber + 1
 
   // Hopefully the new block doesn't appear before this listener is set up
   // If so, we might need to cache a few blocks in BlockEmitter, or move this call
   // up and cache them locally
+  logger.debug(`createOverlayTx before await getNextBlockHash nextBlockNumber: ${nextBlockNumber}`)
   const nextBlockHash = await getNextBlockHash(wallet, blockEmitter, nextBlockNumber)
+  logger.debug(`createOverlayTx before await getBuggyHash nextBlockNumber: ${nextBlockNumber}`)
   const nextBlockHashBee = await getBuggyHash(nextBlockNumber)
+  logger.debug(
+    `createOverlayTx after await getBuggyHash nextBlockNumber: ${nextBlockNumber} nextBlockHashBee: ${nextBlockHashBee}`,
+  )
 
   return {
     blockHash,
@@ -149,6 +156,7 @@ export function createFaucetRoutes({ wallet, blockEmitter, logger, bzz, funding 
 
   router.post('/overlay/:address', async (req: Request<{ address: string }>, res: Response) => {
     let address
+    logger.info(`POST: /overlay/:address ${address}`)
     try {
       address = getAddress(req.params.address)
     } catch (_) {
