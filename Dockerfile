@@ -1,13 +1,12 @@
 #
 # Build buggy-hash
 #
-FROM golang:alpine AS buggy-hash
+FROM golang AS buggy-hash
 
 WORKDIR /app
 
 COPY go/* ./
-RUN apk add gcc musl-dev \
-  && go build -o buggy-hash
+RUN go build -o buggy-hash
 
 #
 # Build app
