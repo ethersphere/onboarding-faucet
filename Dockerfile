@@ -17,11 +17,11 @@ FROM node:lts-alpine as base
 WORKDIR /app
 
 # Install python
-# RUN apk add --update --no-cache make python3
+RUN apk add --update --no-cache make python3 cc
 
 # Install dependencies
 COPY package*.json ./
-RUN npm ci --production
+RUN npm ci
 
 # Build application
 COPY . .
