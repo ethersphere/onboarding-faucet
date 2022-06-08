@@ -17,7 +17,7 @@ FROM node:lts-alpine as base
 WORKDIR /app
 
 # Install python
-RUN apk add --update --no-cache python3
+RUN apk add --update --no-cache make python3
 
 # Install dependencies
 COPY package*.json ./
