@@ -28,6 +28,7 @@ RUN npm run build
 # Final container
 #
 FROM node:lts-alpine
+RUN apk add --update --no-cache python3
 
 WORKDIR /app
 
