@@ -16,6 +16,9 @@ FROM node:lts-alpine as base
 
 WORKDIR /app
 
+# Install python
+RUN apk add --update --no-cache python3
+
 # Install dependencies
 COPY package*.json ./
 RUN npm ci
@@ -28,7 +31,6 @@ RUN npm run build
 # Final container
 #
 FROM node:lts-alpine
-RUN apk add --update --no-cache python3
 
 WORKDIR /app
 
