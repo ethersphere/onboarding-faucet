@@ -12,16 +12,13 @@ RUN apk add gcc musl-dev \
 #
 # Build app
 #
-FROM node:lts-alpine as base
+FROM node as base
 
 WORKDIR /app
 
-# Install python
-# RUN apk add --update --no-cache make python3
-
 # Install dependencies
 COPY package*.json ./
-RUN npm ci --production
+RUN npm ci
 
 # Build application
 COPY . .
