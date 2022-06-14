@@ -5,6 +5,8 @@ import { BigNumberish } from '@ethersproject/bignumber'
 // Lib
 import { getBuggyHash } from '../lib/buggy-hash'
 import { auth } from '../middlewares/auth'
+import { Semaphore } from '../lib/semaphore'
+import { logger } from '../lib/logger'
 
 // Metrics
 import {
@@ -23,7 +25,9 @@ import type { BlockEmitter } from '../lib/block-emitter'
 import type { Logger } from 'winston'
 import type { Contract } from '@ethersproject/contracts'
 import type { FundingConfig } from '../lib/config'
-import { logger } from '../lib/logger'
+
+// Allows only single operation to run
+const semaphore = new Semaphore('wallet semaphore', 1)
 
 export type FaucetRoutesConfig = {
   wallet: Wallet
@@ -206,6 +210,8 @@ export function createFaucetRoutes({ wallet, blockEmitter, logger, bzz, funding 
       return
     }
 
+    // Wait until lock is acquired to do anything
+    const lock = await semaphore.acquire()
     try {
       res.json(await createOverlayTx(wallet, blockEmitter, transformAddress(address)))
       overlayCreationCounter.inc()
@@ -214,6 +220,7 @@ export function createFaucetRoutes({ wallet, blockEmitter, logger, bzz, funding 
       logger.error('createOverlayTx', err)
       res.sendStatus(500)
     }
+    lock.release()
   })
 
   router.post('/fund/bzz/:address', auth, async (req: Request<{ address: string }>, res: Response) => {
@@ -232,6 +239,8 @@ export function createFaucetRoutes({ wallet, blockEmitter, logger, bzz, funding 
       return
     }
 
+    // Wait until lock is acquired to do anything
+    const lock = await semaphore.acquire()
     try {
       res.json(await fundAddressWithToken(wallet, bzz, transformAddress(address), funding.bzzAmount))
       tokenFundCounter.inc()
@@ -240,6 +249,7 @@ export function createFaucetRoutes({ wallet, blockEmitter, logger, bzz, funding 
       logger.error('fundAddressWithToken', err)
       res.sendStatus(500)
     }
+    lock.release()
   })
 
   router.post('/fund/native/:address', auth, async (req: Request<{ address: string }>, res: Response) => {
@@ -258,6 +268,8 @@ export function createFaucetRoutes({ wallet, blockEmitter, logger, bzz, funding 
       return
     }
 
+    // Wait until lock is acquired to do anything
+    const lock = await semaphore.acquire()
     try {
       res.json(await fundAddressWithNative(wallet, transformAddress(address), funding.nativeAmount))
       nativeFundCounter.inc()
@@ -266,6 +278,7 @@ export function createFaucetRoutes({ wallet, blockEmitter, logger, bzz, funding 
       logger.error('fundAddressWithNative', err)
       res.sendStatus(500)
     }
+    lock.release()
   })
 
   router.get('/balance', auth, async (_, res) => {
