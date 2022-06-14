@@ -155,8 +155,6 @@ export async function fundAddressWithNative(
   return await tx.wait()
 }
 
-const TxQueue = []
-
 export function createFaucetRoutes({ wallet, blockEmitter, logger, bzz, funding }: FaucetRoutesConfig): Router {
   const router = Router()
 
@@ -174,7 +172,6 @@ export function createFaucetRoutes({ wallet, blockEmitter, logger, bzz, funding 
     // Wait until lock is acquired to do anything
     const lock = await semaphore.acquire()
     try {
-      TxQueue.push(transformAddress(address))
       res.json(await createOverlayTx(wallet, blockEmitter, transformAddress(address)))
       overlayCreationCounter.inc()
     } catch (err) {
