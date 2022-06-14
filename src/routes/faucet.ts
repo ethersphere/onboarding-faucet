@@ -1,5 +1,6 @@
 import { Request, Response, Router } from 'express'
 import { getAddress } from '@ethersproject/address'
+import { BigNumberish } from '@ethersproject/bignumber'
 
 // Lib
 import { getBuggyHash } from '../lib/buggy-hash'
@@ -39,9 +40,43 @@ export type OverlayTx = {
   nextBlockHashBee: string
 }
 
+interface OldGasOptions {
+  gasPrice: BigNumberish
+}
+interface EIP1559GasOptions {
+  maxFeePerGas: BigNumberish
+  maxPriorityFeePerGas?: BigNumberish
+}
+
+type TxGasOptions = OldGasOptions | EIP1559GasOptions
+
 // Errors
 export class HasTransactionsError extends Error {}
 export class BlockTooRecent extends Error {}
+
+// Constants
+const gasMult = 2 // This must be an integer value because we don't do any fancy rounding and it would throw runtime errors
+
+async function getGasPrice(wallet: Wallet): Promise<TxGasOptions> {
+  const gasPrice = await wallet.getGasPrice()
+  const feeData = await wallet.getFeeData()
+  let txGasOptions: TxGasOptions
+
+  // The blockchain supports EIP-1559
+  if (feeData.maxFeePerGas !== null && feeData.maxPriorityFeePerGas !== null) {
+    txGasOptions = {
+      maxFeePerGas: feeData.maxFeePerGas,
+      maxPriorityFeePerGas: feeData.maxPriorityFeePerGas.mul(gasMult),
+    }
+  }
+
+  // Default to gasPrice
+  else {
+    txGasOptions = { gasPrice: gasPrice.mul(gasMult) }
+  }
+
+  return txGasOptions
+}
 
 function transformAddress(address: string): string {
   if (address.toLowerCase().startsWith('0x')) {
@@ -93,12 +128,12 @@ async function createOverlayTx(wallet: Wallet, blockEmitter: BlockEmitter, addre
     throw new HasTransactionsError()
   }
 
-  const gasPrice = await wallet.getGasPrice()
+  const gasOptions = await getGasPrice(wallet)
   const tx = await wallet.sendTransaction({
     to: address,
     value: 0,
     data: '0x' + address.padStart(64, '0').toLowerCase(),
-    gasPrice,
+    ...gasOptions,
   })
   logger.info(`sending transaction to ${address}`)
   const { blockNumber, blockHash, transactionHash } = await tx.wait()
@@ -125,9 +160,14 @@ async function createOverlayTx(wallet: Wallet, blockEmitter: BlockEmitter, addre
   }
 }
 
-async function fundAddressWithToken(bzz: Contract, address: string, amount: bigint): Promise<TransactionReceipt> {
-  const gasPrice = await bzz.getGasPrice()
-  const tx = await bzz.transfer(address, amount, { gasPrice })
+async function fundAddressWithToken(
+  wallet: Wallet,
+  bzz: Contract,
+  address: string,
+  amount: bigint,
+): Promise<TransactionReceipt> {
+  const gasOptions = await getGasPrice(wallet)
+  const tx = await bzz.transfer(address, amount, gasOptions)
 
   logger.debug(`fundAddressWithToken address ${address} amount ${amount}`)
 
@@ -139,11 +179,12 @@ export async function fundAddressWithNative(
   address: string,
   amount: bigint,
 ): Promise<TransactionReceipt> {
-  const gasPrice = await wallet.getGasPrice()
+  const gasOptions = await getGasPrice(wallet)
+
   const tx = await wallet.sendTransaction({
     to: address,
     value: amount,
-    gasPrice,
+    ...gasOptions,
   })
 
   logger.debug(`fundAddressWithNative address ${address} amount ${amount}`)
@@ -192,7 +233,7 @@ export function createFaucetRoutes({ wallet, blockEmitter, logger, bzz, funding 
     }
 
     try {
-      res.json(await fundAddressWithToken(bzz, transformAddress(address), funding.bzzAmount))
+      res.json(await fundAddressWithToken(wallet, bzz, transformAddress(address), funding.bzzAmount))
       tokenFundCounter.inc()
     } catch (err) {
       tokenFundFailedCounter.inc()
