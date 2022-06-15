@@ -1,6 +1,5 @@
 import { Request, Response, Router } from 'express'
 import { getAddress } from '@ethersproject/address'
-import { BigNumberish } from '@ethersproject/bignumber'
 
 // Lib
 import { getBuggyHash } from '../lib/buggy-hash'
@@ -25,6 +24,7 @@ import type { BlockEmitter } from '../lib/block-emitter'
 import type { Logger } from 'winston'
 import type { Contract } from '@ethersproject/contracts'
 import type { FundingConfig } from '../lib/config'
+import type { BigNumber } from '@ethersproject/bignumber'
 
 // Allows only single operation to run
 const semaphore = new Semaphore('wallet semaphore', 1)
@@ -44,43 +44,15 @@ export type OverlayTx = {
   nextBlockHashBee: string
 }
 
-interface OldGasOptions {
-  gasPrice: BigNumberish
-}
-interface EIP1559GasOptions {
-  maxFeePerGas: BigNumberish
-  maxPriorityFeePerGas?: BigNumberish
-}
+async function getGasPrice(wallet: Wallet): Promise<BigNumber> {
+  const gasPrice = await wallet.getGasPrice()
 
-type TxGasOptions = OldGasOptions | EIP1559GasOptions
+  return gasPrice.mul(12).div(10)
+}
 
 // Errors
 export class HasTransactionsError extends Error {}
 export class BlockTooRecent extends Error {}
-
-// Constants
-const gasMult = 2 // This must be an integer value because we don't do any fancy rounding and it would throw runtime errors
-
-async function getGasPrice(wallet: Wallet): Promise<TxGasOptions> {
-  const gasPrice = await wallet.getGasPrice()
-  const feeData = await wallet.getFeeData()
-  let txGasOptions: TxGasOptions
-
-  // The blockchain supports EIP-1559
-  if (feeData.maxFeePerGas !== null && feeData.maxPriorityFeePerGas !== null) {
-    txGasOptions = {
-      maxFeePerGas: feeData.maxFeePerGas,
-      maxPriorityFeePerGas: feeData.maxPriorityFeePerGas.mul(gasMult),
-    }
-  }
-
-  // Default to gasPrice
-  else {
-    txGasOptions = { gasPrice: gasPrice.mul(gasMult) }
-  }
-
-  return txGasOptions
-}
 
 function transformAddress(address: string): string {
   if (address.toLowerCase().startsWith('0x')) {
@@ -132,12 +104,12 @@ async function createOverlayTx(wallet: Wallet, blockEmitter: BlockEmitter, addre
     throw new HasTransactionsError()
   }
 
-  const gasOptions = await getGasPrice(wallet)
+  const gasPrice = await getGasPrice(wallet)
   const tx = await wallet.sendTransaction({
     to: address,
     value: 0,
     data: '0x' + address.padStart(64, '0').toLowerCase(),
-    ...gasOptions,
+    gasPrice,
   })
   logger.info(`sending transaction to ${address}`)
   const { blockNumber, blockHash, transactionHash } = await tx.wait()
@@ -170,8 +142,8 @@ async function fundAddressWithToken(
   address: string,
   amount: bigint,
 ): Promise<TransactionReceipt> {
-  const gasOptions = await getGasPrice(wallet)
-  const tx = await bzz.transfer(address, amount, gasOptions)
+  const gasPrice = await getGasPrice(wallet)
+  const tx = await bzz.transfer(address, amount, { gasPrice })
 
   logger.debug(`fundAddressWithToken address ${address} amount ${amount}`)
 
@@ -183,12 +155,11 @@ export async function fundAddressWithNative(
   address: string,
   amount: bigint,
 ): Promise<TransactionReceipt> {
-  const gasOptions = await getGasPrice(wallet)
-
+  const gasPrice = await getGasPrice(wallet)
   const tx = await wallet.sendTransaction({
     to: address,
     value: amount,
-    ...gasOptions,
+    gasPrice,
   })
 
   logger.debug(`fundAddressWithNative address ${address} amount ${amount}`)
