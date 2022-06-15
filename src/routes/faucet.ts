@@ -171,8 +171,8 @@ export function createFaucetRoutes({ wallet, blockEmitter, logger, bzz, funding 
   const router = Router()
 
   router.post('/overlay/:address', async (req: Request<{ address: string }>, res: Response) => {
+    logger.info(`POST: /overlay/:address ${req.params.address}`)
     let address
-    logger.info(`POST: /overlay/:address ${address}`)
     try {
       address = getAddress(req.params.address)
     } catch (_) {
@@ -195,6 +195,8 @@ export function createFaucetRoutes({ wallet, blockEmitter, logger, bzz, funding 
   })
 
   router.post('/fund/bzz/:address', auth, async (req: Request<{ address: string }>, res: Response) => {
+    logger.info(`POST: fund/bzz/:address ${req.params.address}`)
+
     if (!funding.bzzAmount) {
       res.status(503).json({ error: 'amount not configured' })
 
@@ -224,6 +226,8 @@ export function createFaucetRoutes({ wallet, blockEmitter, logger, bzz, funding 
   })
 
   router.post('/fund/native/:address', auth, async (req: Request<{ address: string }>, res: Response) => {
+    logger.info(`POST: fund/native/:address ${req.params.address}`)
+
     if (!funding.nativeAmount) {
       res.status(503).json({ error: 'amount not configured' })
 
