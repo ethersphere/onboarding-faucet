@@ -24,6 +24,7 @@ import type { BlockEmitter } from '../lib/block-emitter'
 import type { Logger } from 'winston'
 import type { Contract } from '@ethersproject/contracts'
 import type { FundingConfig } from '../lib/config'
+import type { BigNumber } from '@ethersproject/bignumber'
 
 // Allows only single operation to run
 const semaphore = new Semaphore('wallet semaphore', 1)
@@ -41,6 +42,12 @@ export type OverlayTx = {
   transactionHash: string
   nextBlockHash: string
   nextBlockHashBee: string
+}
+
+async function getGasPrice(wallet: Wallet): Promise<BigNumber> {
+  const gasPrice = await wallet.getGasPrice()
+
+  return gasPrice.mul(12).div(10)
 }
 
 // Errors
@@ -97,7 +104,7 @@ async function createOverlayTx(wallet: Wallet, blockEmitter: BlockEmitter, addre
     throw new HasTransactionsError()
   }
 
-  const gasPrice = await wallet.getGasPrice()
+  const gasPrice = await getGasPrice(wallet)
   const tx = await wallet.sendTransaction({
     to: address,
     value: 0,
@@ -129,8 +136,13 @@ async function createOverlayTx(wallet: Wallet, blockEmitter: BlockEmitter, addre
   }
 }
 
-async function fundAddressWithToken(bzz: Contract, address: string, amount: bigint): Promise<TransactionReceipt> {
-  const gasPrice = await bzz.getGasPrice()
+async function fundAddressWithToken(
+  wallet: Wallet,
+  bzz: Contract,
+  address: string,
+  amount: bigint,
+): Promise<TransactionReceipt> {
+  const gasPrice = await getGasPrice(wallet)
   const tx = await bzz.transfer(address, amount, { gasPrice })
 
   logger.debug(`fundAddressWithToken address ${address} amount ${amount}`)
@@ -143,7 +155,7 @@ export async function fundAddressWithNative(
   address: string,
   amount: bigint,
 ): Promise<TransactionReceipt> {
-  const gasPrice = await wallet.getGasPrice()
+  const gasPrice = await getGasPrice(wallet)
   const tx = await wallet.sendTransaction({
     to: address,
     value: amount,
@@ -201,7 +213,7 @@ export function createFaucetRoutes({ wallet, blockEmitter, logger, bzz, funding 
     // Wait until lock is acquired to do anything
     const lock = await semaphore.acquire()
     try {
-      res.json(await fundAddressWithToken(bzz, transformAddress(address), funding.bzzAmount))
+      res.json(await fundAddressWithToken(wallet, bzz, transformAddress(address), funding.bzzAmount))
       tokenFundCounter.inc()
     } catch (err) {
       tokenFundFailedCounter.inc()
