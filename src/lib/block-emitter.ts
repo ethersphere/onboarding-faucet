@@ -28,6 +28,7 @@ export class BlockEmitter extends TypedEmitter<BlockEmitterEvents> {
       number,
       hash,
     })
+    logger.debug(`emitted new block ${number}`)
 
     this.lastBlock = number
   }
@@ -36,6 +37,7 @@ export class BlockEmitter extends TypedEmitter<BlockEmitterEvents> {
     if (this.handlingBlocks) {
       return number <= this.lastBlock
     }
+    logger.debug(`checking blocks ${this.lastBlock} - ${number}`)
 
     this.handlingBlocks = true
 
