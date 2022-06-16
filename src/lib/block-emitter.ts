@@ -9,7 +9,7 @@ type BlockEmitterEvents = {
 
 export class BlockEmitter extends TypedEmitter<BlockEmitterEvents> {
   provider: JsonRpcProvider
-  lastBlock: number | null = null
+  lastProcessedBlock: number | null = null
   semaphore = new Semaphore('block emitter', 1)
   // should be but it still fails to compile... ReturnType<typeof setInterval>
   interval?: any = null // eslint-disable-line
@@ -19,27 +19,28 @@ export class BlockEmitter extends TypedEmitter<BlockEmitterEvents> {
     this.provider = provider
   }
 
-  async handleBlock(number: number): Promise<void> {
-    const { hash } = await this.provider.getBlock(number)
+  async handleBlock(blockNumber: number): Promise<void> {
+    const { hash } = await this.provider.getBlock(blockNumber)
 
     this.emit('block', {
-      number,
+      number: blockNumber,
       hash,
     })
-    logger.debug(`emitted new block ${number}`)
+    logger.debug(`emitted new block ${blockNumber}`)
 
-    this.lastBlock = number
+    this.lastProcessedBlock = blockNumber
   }
 
-  async handleBlocks(number: number): Promise<void> {
-    if (this.lastBlock === null) {
-      this.lastBlock = number - 1
+  async handleBlocks(blockNumber: number): Promise<void> {
+    // We have not processed any block yet, lets just start from current one
+    if (this.lastProcessedBlock === null) {
+      this.lastProcessedBlock = blockNumber - 1
     }
-    logger.debug(`checking blocks ${this.lastBlock + 1} - ${number}`)
+    logger.debug(`checking blocks ${this.lastProcessedBlock + 1} - ${blockNumber}`)
 
     // In case blocks were missed (due to RPC issues for example), this makes sure
     // that we always emit them in the right order and without missing any
-    for (let current = this.lastBlock + 1; current <= Math.max(number, this.lastBlock); current++) {
+    for (let current = this.lastProcessedBlock + 1; current <= blockNumber; current++) {
       await this.handleBlock(current)
     }
   }

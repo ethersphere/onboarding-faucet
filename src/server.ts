@@ -59,7 +59,7 @@ export const createApp = ({ rpcUrl, privateKey, bzzAddress }: AppConfig, logger:
       await provider.getBlockNumber()
 
       // Check blockEmitter has processed some block
-      if (blockEmitter.lastBlock === null) {
+      if (blockEmitter.lastProcessedBlock === null) {
         throw new Error('No processed blocks yet')
       }
 
