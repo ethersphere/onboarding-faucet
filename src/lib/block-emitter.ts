@@ -51,7 +51,7 @@ export class BlockEmitter extends TypedEmitter<BlockEmitterEvents> {
       const number = await this.provider.getBlockNumber()
       await this.handleBlocks(number)
     } catch (error) {
-      logger.error('failed to check blocks')
+      logger.error(`failed to check blocks: ${(error as Error).message} ${(error as Error).stack}`)
     }
     lock.release()
   }
