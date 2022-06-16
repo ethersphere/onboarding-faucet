@@ -1,9 +1,7 @@
 import type { JsonRpcProvider } from '@ethersproject/providers'
 import { TypedEmitter } from 'tiny-typed-emitter'
 import { logger } from './logger'
-
-// Lib
-import { sleep } from './utils'
+import { Semaphore } from './semaphore'
 
 type BlockEmitterEvents = {
   block: (block: { number: number; hash: string }) => void
@@ -11,8 +9,8 @@ type BlockEmitterEvents = {
 
 export class BlockEmitter extends TypedEmitter<BlockEmitterEvents> {
   provider: JsonRpcProvider
-  lastBlock = Infinity
-  handlingBlocks = false
+  lastBlock: number | null = null
+  semaphore = new Semaphore('block emitter', 1)
   // should be but it still fails to compile... ReturnType<typeof setInterval>
   interval?: any = null // eslint-disable-line
 
@@ -33,39 +31,28 @@ export class BlockEmitter extends TypedEmitter<BlockEmitterEvents> {
     this.lastBlock = number
   }
 
-  async handleBlocks(number: number): Promise<boolean> {
-    if (this.handlingBlocks) {
-      return number <= this.lastBlock
+  async handleBlocks(number: number): Promise<void> {
+    if (this.lastBlock === null) {
+      this.lastBlock = number - 1
     }
-    logger.debug(`checking blocks ${this.lastBlock} - ${number}`)
-
-    this.handlingBlocks = true
+    logger.debug(`checking blocks ${this.lastBlock + 1} - ${number}`)
 
     // In case blocks were missed (due to RPC issues for example), this makes sure
     // that we always emit them in the right order and without missing any
-    for (let current = this.lastBlock; current <= Math.max(number, this.lastBlock); current++) {
-      await this.handleBlock(number)
+    for (let current = this.lastBlock + 1; current <= Math.max(number, this.lastBlock); current++) {
+      await this.handleBlock(current)
     }
-
-    this.handlingBlocks = false
-
-    return true
   }
 
   async check() {
-    let done
+    const lock = await this.semaphore.acquire()
     try {
       const number = await this.provider.getBlockNumber()
-      do {
-        done = await this.handleBlocks(number)
-
-        if (!done) {
-          await sleep(100)
-        }
-      } while (!done && this.interval !== null)
+      await this.handleBlocks(number)
     } catch (error) {
       logger.error('failed to check blocks')
     }
+    lock.release()
   }
 
   start() {
