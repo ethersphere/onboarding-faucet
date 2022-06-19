@@ -19,7 +19,7 @@ export class BlockEmitter extends TypedEmitter<BlockEmitterEvents> {
     this.provider = provider
   }
 
-  async handleBlock(blockNumber: number): Promise<void> {
+  handleBlock = async (blockNumber: number): Promise<void> => {
     const { hash } = await this.provider.getBlock(blockNumber)
 
     this.emit('block', {
@@ -31,7 +31,7 @@ export class BlockEmitter extends TypedEmitter<BlockEmitterEvents> {
     this.lastProcessedBlock = blockNumber
   }
 
-  async handleBlocks(blockNumber: number): Promise<void> {
+  handleBlocks = async (blockNumber: number): Promise<void> => {
     // We have not processed any block yet, lets just start from current one
     if (this.lastProcessedBlock === null) {
       this.lastProcessedBlock = blockNumber - 1
@@ -45,7 +45,7 @@ export class BlockEmitter extends TypedEmitter<BlockEmitterEvents> {
     }
   }
 
-  async check() {
+  check = async () => {
     const lock = await this.semaphore.acquire()
     try {
       const number = await this.provider.getBlockNumber()
@@ -56,12 +56,12 @@ export class BlockEmitter extends TypedEmitter<BlockEmitterEvents> {
     lock.release()
   }
 
-  start() {
-    this.interval = setInterval(this.check.bind(this), 5000) // TODO: this should be configurable
+  start = () => {
+    this.interval = setInterval(async () => this.check(), 5000) // TODO: this should be configurable
     this.check()
   }
 
-  async stop() {
+  stop = () => {
     clearInterval(this.interval)
     this.interval = null
   }
