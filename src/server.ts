@@ -50,22 +50,23 @@ export const createApp = ({ rpcUrl, privateKey, bzzAddress }: AppConfig, logger:
 
   // Health, metrics, assets, default endpoints
   app.get('/health', async (_req, res) => {
-    res.sendStatus(200)
-  })
-
-  app.get('/readiness', async (_req, res) => {
     try {
       // Check we have connection to blockchain
-      await provider.getBlockNumber()
-
-      // Check blockEmitter has processed some block
-      if (blockEmitter.lastProcessedBlock === null) {
-        throw new Error('No processed blocks yet')
-      }
+      const blockNum = await provider.getBlockNumber()
+      await provider.getBlock(blockNum)
 
       res.sendStatus(200)
     } catch (err) {
       logger.error('readiness', err)
+      res.sendStatus(502)
+    }
+  })
+
+  app.get('/readiness', async (_req, res) => {
+    // Check blockEmitter has processed some block
+    if (blockEmitter.lastProcessedBlock === null) {
+      res.sendStatus(502)
+    } else {
       res.sendStatus(502)
     }
   })
