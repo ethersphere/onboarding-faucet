@@ -76,7 +76,7 @@ async function getNextBlockHash(wallet: Wallet, blockNumber: number): Promise<st
 
       return hash
     } catch (error) {
-      logger.debug('Failed to retrieve ')
+      logger.debug(`Failed to retrieve block ${blockNumber} attempt no ${tries + 1}`)
     }
 
     // Lets wait one second
