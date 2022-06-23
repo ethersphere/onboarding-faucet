@@ -18,9 +18,16 @@ afterAll(async () => {
 
 describe('GET /health', () => {
   it('should return 200 & OK', async () => {
+    await mineBlock()
     const res = await request(app).get(`/health`).expect(200)
 
     expect(res.text).toEqual('OK')
+  })
+
+  it('should return 502 & Bad Gateway with wrong RPC URL', async () => {
+    const res = await request(appWrongRpcUrl).get(`/health`).expect(502)
+
+    expect(res.text).toEqual('Bad Gateway')
   })
 })
 
@@ -30,11 +37,5 @@ describe('GET /readiness', () => {
     const res = await request(app).get(`/readiness`).expect(200)
 
     expect(res.text).toEqual('OK')
-  })
-
-  it('should return 502 & Bad Gateway with wrong RPC URL', async () => {
-    const res = await request(appWrongRpcUrl).get(`/readiness`).expect(502)
-
-    expect(res.text).toEqual('Bad Gateway')
   })
 })

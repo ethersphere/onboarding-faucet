@@ -67,7 +67,7 @@ export const createApp = ({ rpcUrl, privateKey, bzzAddress }: AppConfig, logger:
     if (blockEmitter.lastProcessedBlock === null) {
       res.sendStatus(502)
     } else {
-      res.sendStatus(502)
+      res.sendStatus(200)
     }
   })
 
