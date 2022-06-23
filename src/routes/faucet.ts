@@ -70,7 +70,7 @@ async function hasBalance(provider: Provider, address: string): Promise<boolean>
 }
 
 async function getNextBlockHash(wallet: Wallet, blockNumber: number): Promise<string> | never {
-  for (let tries = 0; tries <= 20; tries++) {
+  for (let tries = 0; tries <= 30; tries++) {
     try {
       const { hash } = await wallet.provider.getBlock(blockNumber)
 
@@ -80,7 +80,7 @@ async function getNextBlockHash(wallet: Wallet, blockNumber: number): Promise<st
     }
 
     // Lets wait one second
-    sleep(1000)
+    await sleep(1000)
   }
   throw new Error('getNextBlockHash failed to get blockhash for blockNumber ${blockNumber}')
 }
