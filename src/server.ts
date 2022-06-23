@@ -5,7 +5,6 @@ import { JsonRpcProvider } from '@ethersproject/providers'
 import { Contract } from '@ethersproject/contracts'
 
 // Lib
-import { BlockEmitter } from './lib/block-emitter'
 import { register } from './lib/metrics'
 
 // Routes
@@ -17,11 +16,7 @@ import { AppConfig, EnvironmentVariables, getFundingConfig } from './lib/config'
 // ABI
 import abi from './data/abi.json'
 
-interface AppliCationWithStop extends Application {
-  stop: () => Promise<void>
-}
-
-export const createApp = ({ rpcUrl, privateKey, bzzAddress }: AppConfig, logger: Logger): AppliCationWithStop => {
+export const createApp = ({ rpcUrl, privateKey, bzzAddress }: AppConfig, logger: Logger): Application => {
   // Create Express Server
   const app = express()
 
@@ -32,16 +27,11 @@ export const createApp = ({ rpcUrl, privateKey, bzzAddress }: AppConfig, logger:
   const wallet = new Wallet(privateKey, provider)
   const bzz = new Contract(bzzAddress, abi, wallet)
 
-  // Block emitter
-  const blockEmitter = new BlockEmitter(provider)
-  blockEmitter.start()
-
   // Faucet route
   app.use(
     '/faucet',
     createFaucetRoutes({
       wallet,
-      blockEmitter,
       logger,
       bzz,
       funding: getFundingConfig(process.env as EnvironmentVariables),
@@ -64,11 +54,7 @@ export const createApp = ({ rpcUrl, privateKey, bzzAddress }: AppConfig, logger:
 
   app.get('/readiness', async (_req, res) => {
     // Check blockEmitter has processed some block
-    if (blockEmitter.lastProcessedBlock === null) {
-      res.sendStatus(502)
-    } else {
-      res.sendStatus(200)
-    }
+    res.sendStatus(200)
   })
 
   app.get('/metrics', async (_req, res) => {
@@ -79,11 +65,5 @@ export const createApp = ({ rpcUrl, privateKey, bzzAddress }: AppConfig, logger:
   app.use(express.static('public'))
   app.use((_req, res) => res.sendStatus(404))
 
-  const newApp = app as unknown as AppliCationWithStop
-
-  newApp.stop = async () => {
-    await blockEmitter.stop()
-  }
-
-  return newApp
+  return app
 }

@@ -20,18 +20,17 @@ import {
 // Types
 import type { Wallet } from '@ethersproject/wallet'
 import type { Provider, TransactionReceipt } from '@ethersproject/abstract-provider'
-import type { BlockEmitter } from '../lib/block-emitter'
 import type { Logger } from 'winston'
 import type { Contract } from '@ethersproject/contracts'
 import type { FundingConfig } from '../lib/config'
 import type { BigNumber } from '@ethersproject/bignumber'
+import { sleep } from '../lib/utils'
 
 // Allows only single operation to run
 const semaphore = new Semaphore('wallet semaphore', 1)
 
 export type FaucetRoutesConfig = {
   wallet: Wallet
-  blockEmitter: BlockEmitter
   logger: Logger
   bzz: Contract
   funding: FundingConfig
@@ -70,35 +69,23 @@ async function hasBalance(provider: Provider, address: string): Promise<boolean>
   return balance.gt(0)
 }
 
-async function getNextBlockHash(wallet: Wallet, blockEmitter: BlockEmitter, blockNumber: number): Promise<string> {
-  try {
-    return await new Promise(resolve => {
-      const handler = ({ number, hash }: { number: number; hash: string }) => {
-        if (number > blockNumber) {
-          throw new BlockTooRecent()
-        }
+async function getNextBlockHash(wallet: Wallet, blockNumber: number): Promise<string> | never {
+  for (let tries = 0; tries <= 20; tries++) {
+    try {
+      const { hash } = await wallet.provider.getBlock(blockNumber)
 
-        if (number === blockNumber) {
-          blockEmitter.off('block', handler)
-          resolve(hash)
-        }
-      }
-
-      blockEmitter.on('block', handler)
-    })
-  } catch (err) {
-    if (err instanceof BlockTooRecent) {
-      const nextBlock = await wallet.provider.getBlock(blockNumber)
-
-      return nextBlock.hash
+      return hash
+    } catch (error) {
+      logger.debug('Failed to retrieve ')
     }
-    logger.debug(`getNextBlockHash failed to get blockhash for blockNumber ${blockNumber}`)
 
-    throw err
+    // Lets wait one second
+    sleep(1000)
   }
+  throw new Error('getNextBlockHash failed to get blockhash for blockNumber ${blockNumber}')
 }
 
-async function createOverlayTx(wallet: Wallet, blockEmitter: BlockEmitter, address: string): Promise<OverlayTx> {
+async function createOverlayTx(wallet: Wallet, address: string): Promise<OverlayTx> {
   if (await hasBalance(wallet.provider, address)) {
     logger.info(`address ${address} already has balance`)
     throw new HasTransactionsError()
@@ -121,7 +108,7 @@ async function createOverlayTx(wallet: Wallet, blockEmitter: BlockEmitter, addre
   // If so, we might need to cache a few blocks in BlockEmitter, or move this call
   // up and cache them locally
   logger.debug(`createOverlayTx before await getNextBlockHash nextBlockNumber: ${nextBlockNumber}`)
-  const nextBlockHash = await getNextBlockHash(wallet, blockEmitter, nextBlockNumber)
+  const nextBlockHash = await getNextBlockHash(wallet, nextBlockNumber)
   logger.debug(`createOverlayTx before await getBuggyHash nextBlockNumber: ${nextBlockNumber}`)
   const nextBlockHashBee = await getBuggyHash(nextBlockNumber)
   logger.debug(
@@ -167,7 +154,7 @@ export async function fundAddressWithNative(
   return await tx.wait()
 }
 
-export function createFaucetRoutes({ wallet, blockEmitter, logger, bzz, funding }: FaucetRoutesConfig): Router {
+export function createFaucetRoutes({ wallet, logger, bzz, funding }: FaucetRoutesConfig): Router {
   const router = Router()
 
   router.post('/overlay/:address', async (req: Request<{ address: string }>, res: Response) => {
@@ -184,7 +171,7 @@ export function createFaucetRoutes({ wallet, blockEmitter, logger, bzz, funding 
     // Wait until lock is acquired to do anything
     const lock = await semaphore.acquire()
     try {
-      res.json(await createOverlayTx(wallet, blockEmitter, transformAddress(address)))
+      res.json(await createOverlayTx(wallet, transformAddress(address)))
       overlayCreationCounter.inc()
     } catch (err) {
       overlayCreationFailedCounter.inc()
