@@ -20,8 +20,10 @@ export class BlockEmitter extends TypedEmitter<BlockEmitterEvents> {
   }
 
   handleBlock = async (blockNumber: number): Promise<void> => {
+    logger.debug(`handling block ${blockNumber}`)
     const { hash } = await this.provider.getBlock(blockNumber)
 
+    logger.debug(`block hash for block ${blockNumber} is ${hash}`)
     this.emit('block', {
       number: blockNumber,
       hash,
