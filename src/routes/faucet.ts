@@ -163,7 +163,7 @@ export function createFaucetRoutes({ wallet, logger, bzz, funding }: FaucetRoute
     try {
       address = getAddress(req.params.address)
     } catch (_) {
-      res.status(400).json({ error: 'invalid address' })
+      res.status(406).json({ error: 'invalid address' })
 
       return
     }
@@ -176,7 +176,7 @@ export function createFaucetRoutes({ wallet, logger, bzz, funding }: FaucetRoute
     } catch (err) {
       overlayCreationFailedCounter.inc()
       logger.error('createOverlayTx', err)
-      res.sendStatus(500)
+      res.status(400).json({ error: 'failed to fund with token' })
     }
     lock.release()
   })
@@ -185,7 +185,7 @@ export function createFaucetRoutes({ wallet, logger, bzz, funding }: FaucetRoute
     logger.info(`POST: fund/bzz/:address ${req.params.address}`)
 
     if (!funding.bzzAmount) {
-      res.status(503).json({ error: 'amount not configured' })
+      res.status(406).json({ error: 'amount not configured' })
 
       return
     }
@@ -194,7 +194,7 @@ export function createFaucetRoutes({ wallet, logger, bzz, funding }: FaucetRoute
     try {
       address = getAddress(req.params.address)
     } catch (_) {
-      res.status(400).json({ error: 'invalid address' })
+      res.status(406).json({ error: 'invalid address' })
 
       return
     }
@@ -207,7 +207,7 @@ export function createFaucetRoutes({ wallet, logger, bzz, funding }: FaucetRoute
     } catch (err) {
       tokenFundFailedCounter.inc()
       logger.error('fundAddressWithToken', err)
-      res.sendStatus(500)
+      res.status(400).json({ error: 'failed to fund with token' })
     }
     lock.release()
   })
@@ -216,7 +216,7 @@ export function createFaucetRoutes({ wallet, logger, bzz, funding }: FaucetRoute
     logger.info(`POST: fund/native/:address ${req.params.address}`)
 
     if (!funding.nativeAmount) {
-      res.status(503).json({ error: 'amount not configured' })
+      res.status(406).json({ error: 'amount not configured' })
 
       return
     }
@@ -225,7 +225,7 @@ export function createFaucetRoutes({ wallet, logger, bzz, funding }: FaucetRoute
     try {
       address = getAddress(req.params.address)
     } catch (_) {
-      res.status(400).json({ error: 'invalid address' })
+      res.status(406).json({ error: 'invalid address' })
 
       return
     }
@@ -238,7 +238,10 @@ export function createFaucetRoutes({ wallet, logger, bzz, funding }: FaucetRoute
     } catch (err) {
       nativeFundFailedCounter.inc()
       logger.error('fundAddressWithNative', err)
-      res.sendStatus(500)
+      res.status(400).json({
+        error: 'failed to create overlay address',
+        reason: `${(err as Error).name ?? 'unknown name'}: ${(err as Error).message}`,
+      })
     }
     lock.release()
   })

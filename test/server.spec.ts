@@ -19,10 +19,10 @@ describe('GET /health', () => {
     expect(res.text).toEqual('OK')
   })
 
-  it('should return 502 & Bad Gateway with wrong RPC URL', async () => {
-    const res = await request(appWrongRpcUrl).get(`/health`).expect(502)
+  it('should return 404 & Not Found with wrong RPC URL', async () => {
+    const res = await request(appWrongRpcUrl).get(`/health`).expect(404)
 
-    expect(res.text).toEqual('Bad Gateway')
+    expect(res.text).toEqual('Not Found')
   })
 })
 
