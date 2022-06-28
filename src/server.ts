@@ -48,7 +48,7 @@ export const createApp = ({ rpcUrl, privateKey, bzzAddress }: AppConfig, logger:
       res.sendStatus(200)
     } catch (err) {
       logger.error('readiness', err)
-      res.sendStatus(502)
+      res.sendStatus(404)
     }
   })
 
