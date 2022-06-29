@@ -12,7 +12,9 @@ import {
   nativeFundCounter,
   nativeFundFailedCounter,
   overlayCreationCounter,
+  overlayCreationDesktopCallCounter,
   overlayCreationFailedCounter,
+  overlayCreationFaucetWatchCallCounter,
   tokenFundCounter,
   tokenFundFailedCounter,
 } from '../metrics/faucet'
@@ -159,6 +161,17 @@ export function createFaucetRoutes({ wallet, logger, bzz, funding }: FaucetRoute
 
   router.post('/overlay/:address', async (req: Request<{ address: string }>, res: Response) => {
     logger.info(`POST: /overlay/:address ${req.params.address}`)
+
+    switch (req.header('app-name')) {
+      case 'swarm-desktop':
+        overlayCreationDesktopCallCounter.inc()
+        break
+      case 'faucet-watch':
+        overlayCreationFaucetWatchCallCounter.inc()
+        break
+      default:
+    }
+
     let address
     try {
       address = getAddress(req.params.address)

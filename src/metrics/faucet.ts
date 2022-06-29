@@ -6,6 +6,16 @@ export const overlayCreationCounter = createCounter({
   help: 'How many overlay transactions were sent out',
 })
 
+export const overlayCreationDesktopCallCounter = createCounter({
+  name: 'overlay_creation_desktop_call_counter',
+  help: 'How many overlay transactions endpoint was called from desktop',
+})
+
+export const overlayCreationFaucetWatchCallCounter = createCounter({
+  name: 'overlay_creation_faucet_watch_call_counter',
+  help: 'How many overlay transactions endpoint was called from faucet watch',
+})
+
 export const overlayCreationFailedCounter = createCounter({
   name: 'overlay_creation_failed_counter',
   help: 'How many overlay transactions failed',
