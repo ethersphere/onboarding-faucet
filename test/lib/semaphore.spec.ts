@@ -12,10 +12,12 @@ async function asyncTask(semaphore: Semaphore, duration: number): Promise<number
 }
 
 it('should run tasks in sequence with limit 1', async () => {
-  const promisses = []
+  const promisses: Promise<number>[] = []
   const taskLength = 100
   const tasks = 10
   const semaphore = new Semaphore('label', 1)
+
+  const startTime = Date.now()
 
   for (let i = 0; i < tasks; i++) {
     promisses.push(asyncTask(semaphore, taskLength))
@@ -23,18 +25,13 @@ it('should run tasks in sequence with limit 1', async () => {
   const results = await Promise.all(promisses)
   results.sort()
 
-  let minDiff = Infinity
-  for (let i = 1; i < results.length; i++) {
-    const diff = results[i] - results[i - 1]
+  const totalDuration = results[results.length - 1] - startTime
 
-    if (diff < minDiff) minDiff = diff
-  }
-
-  expect(minDiff).toBeGreaterThanOrEqual(taskLength)
+  expect(totalDuration).toBeGreaterThanOrEqual(taskLength * tasks)
 })
 
 it('should run tasks in parallel', async () => {
-  const promisses = []
+  const promisses: Promise<number>[] = []
   const taskLength = 100
   const tasks = 10
   const semaphore = new Semaphore('label', tasks)
